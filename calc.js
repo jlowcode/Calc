@@ -141,7 +141,7 @@ define(['jquery', 'fab/element'], function (jQuery, FbElement) {
             new Request.HTML({
                 // Resolved repetible groups above 30
                 //'url' : '', //Original
-                'url'     : 'index.php?option=com_fabrik&format=raw&task=plugin.pluginAjax&plugin=calc&method=ajax_calc&element_id=' + this.options.id + '&formid=' + this.form.id + '&repeatCounter=' + this.options.repeatCounter,
+                'url'     : Fabrik.liveSite + 'index.php?option=com_fabrik&format=raw&task=plugin.pluginAjax&plugin=calc&method=ajax_calc&element_id=' + this.options.id + '&formid=' + this.form.id + '&repeatCounter=' + this.options.repeatCounter,
                 method    : 'post',
                 'data'    : data,
                 onSuccess: function (tree, elements, r, scripts) {
