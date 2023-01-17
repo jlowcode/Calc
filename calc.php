@@ -490,7 +490,6 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 		$params        = $this->getParams();
 		$w             = new FabrikWorker;
 		$filter        = JFilterInput::getInstance();
-		$d             = $filter->clean($_REQUEST, 'array');
 		$formModel     = $this->getFormModel();
 		$repeatCounter = $this->app->input->get('repeatCounter', '0');
 		$formModel->addEncrytedVarsToArray($d);
@@ -498,6 +497,16 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 		$this->swapValuesForLabels($d);
 		$calc = $params->get('calc_calculation');
 		$this->setStoreDatabaseFormat($d);
+
+		//BEGIN - Resolved repetible groups above 30
+		//$d             = $filter->clean($_REQUEST, 'array');
+		$placeholders = explode(',', $params->get('calc_placeholder'));
+		foreach($placeholders as $placeholder) {
+			$placeholder = trim($placeholder);
+			$match = $placeholder . '_' . $repeatCounter;
+			$calc = str_replace($placeholder, $match, $calc);
+		}
+		//END - Resolved repetible groups above 30
 
 		// $$$ hugh - trying to standardize on $data so scripts know where data is
 		$data = $d;

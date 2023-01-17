@@ -42,6 +42,11 @@
 				description="PLG_ELEMENT_CALC_CALCULATION_DESC"
 				label="PLG_ELEMENT_CALC_CALCULATION_LABEL" />
 
+			<field name="calc_placeholder"
+				type="text"
+				description="PLG_ELEMENT_CALC_PLACEHOLDER_CHANGE_DESC"
+				label="PLG_ELEMENT_CALC_PLACEHOLDER_CHANGE_LABEL"/>
+
 			<field name="calc_format_string"
 				type="text"
 				description="PLG_ELEMENT_CALC_FORMAT_STRING_DESC"
