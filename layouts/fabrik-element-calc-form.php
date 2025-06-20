@@ -2,12 +2,19 @@
 defined('JPATH_BASE') or die;
 
 $d = $displayData;
-if ($d->height <= 1) :
+$width = null;
+foreach ([0, 25, 50, 75, 100] as $allowed) {
+	if ($width === null || abs($d->cols - $width) > abs($allowed - $d->cols)) {
+		$width = $allowed;
+	}
+}
+
+if ($width == 0) $width = "auto";
+$height_style = $d->height > 1 ? ' style="overflow-y:auto; overflow-wrap:anywhere; height:'. ($d->height +.9)*1.5 . 'rem"' : '';
 ?>
-<span class="fabrikinput fabrikElementReadOnly" style="display:inline-block;" name="<?php echo $d->name;?>" id="<?php echo $d->id;?>"><?php echo $d->value;?></span>
-<?php
-else : ?>
-<textarea class="fabrikinput" disabled="disabled" name="<?php echo $d->name;?>"
-	id="<?php echo $d->id;?>" cols="<?php echo $d->cols; ?>"
-	rows="<?php echo $d->rows; ?>"><?php echo $d->value;?></textarea>
-<?php endif; ?>
+
+<div class="fabrikinput form-control-plaintext w-<?php echo $width;?> "<?php echo $height_style;?> 
+	name="<?php echo $d->name;?>"
+	id="<?php echo $d->id;?>" >
+	<?php echo htmlspecialchars_decode($d->value);?>
+	</div>
