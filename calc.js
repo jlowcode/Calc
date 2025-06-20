@@ -139,7 +139,9 @@ define(['jquery', 'fab/element'], function (jQuery, FbElement) {
             data = Object.append(formData, data);
             Fabrik.loader.start(this.element.getParent(), Joomla.JText._('COM_FABRIK_LOADING'));
             new Request.HTML({
-                'url'     : '',
+                // Resolved repetible groups above 30
+                //'url' : '', //Original
+                'url'     : Fabrik.liveSite + 'index.php?option=com_fabrik&format=raw&task=plugin.pluginAjax&plugin=calc&method=ajax_calc&element_id=' + this.options.id + '&formid=' + this.form.id + '&repeatCounter=' + this.options.repeatCounter,
                 method    : 'post',
                 'data'    : data,
                 onSuccess: function (tree, elements, r, scripts) {
