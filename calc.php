@@ -11,7 +11,11 @@
 // No direct access
 defined('_JEXEC') or die('Restricted access');
 
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\MVC\Model\BaseDatabaseModel;
+use Joomla\CMS\Filter\InputFilter;
 use Joomla\Utilities\ArrayHelper;
+use Fabrik\Helpers\Php;
 
 /**
  * Plugin element to render field with PHP calculated value
@@ -36,21 +40,6 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 			$w = new FabrikWorker;
 			$element = $this->getElement();
 			$default = $w->parseMessageForPlaceHolder($element->default, $data, true, true);
-			/* calc in fabrik3.0/3.1 doesn't have eval, issues if F2.0 calc elements are migrated*/
-			/*if ($element->eval == '1')
-			{
-				if (FabrikHelperHTML::isDebug())
-				{
-					$res = eval($default);
-				}
-				else
-				{
-					$res = @eval($default);
-				}
-				FabrikWorker::logEval($res, 'Eval exception : ' . $element->name . '::getDefaultValue() : ' . $default . ' : %s');
-				$default = $res;
-			}
-			*/
 			$this->default = $default;
 		}
 
@@ -102,8 +91,8 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 			//  $$$ hugh - standardizing on $data but need need $d here for backward compat
 			$d = $data;
 			FabrikWorker::clearEval();
-			$res = FabrikHelperHTML::isDebug() ? eval($default) : @eval($default);
-			FabrikWorker::logEval($res, 'Eval exception : ' . $this->getElement()->name . ' (id ' . $this->getId() . ')::_getV() : ' . $default . ' : %s');
+			$res = Php::Eval(['code' => $default, 'vars'=>['data'=>$data, 'd'=>$data, 'repeatCounter'=>$repeatCounter, 'formModel'=>$formModel]]);
+			FabrikWorker::logEval($res, 'Eval exception : ' . $this->getElement()->name . ' (id ' . $this->getId() . ')::_getV() : ' . str_replace('%','%%',$default) . ' : %s');
 
 			return $res;
 		}
@@ -219,7 +208,6 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 	 *
 	 * @return void
 	 */
-
 	public function preProcess($c)
 	{
 		$form = $this->getFormModel();
@@ -308,18 +296,10 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 			$d = $data;
 			$w = new FabrikWorker;
 			$cal = $w->parseMessageForPlaceHolder($cal, $data, true, true);
+			
 			FabrikWorker::clearEval();
-
-			if (FabrikHelperHTML::isDebug())
-			{
-				$res = eval($cal);
-			}
-			else
-			{
-				$res = @eval($cal);
-			}
-
-			FabrikWorker::logEval($res, 'Eval exception : ' . $element->name . ' (id ' . $this->getId() . ')::preFormatFormJoins() : ' . $cal . ' : %s');
+			$res = Php::Eval(['code' => $cal, 'vars'=>['data'=>$data, 'd'=>$data, 'formModel'=>$formModel]]);
+			FabrikWorker::logEval($res, 'Eval exception : ' . $element->name . ' (id ' . $this->getId() . ')::preFormatFormJoins() : ' . str_replace('%','%%',$cal) . ' : %s');
 
 			$res = $this->getFormattedValue($res);
 
@@ -362,7 +342,8 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 	{
 		$params = $this->getParams();
 		$element = $this->getElement();
-		$data = $this->getFormModel()->data;
+		$this->getFormModel()->getData();
+        $data = $this->getFormModel()->data;
 		$value = $this->getFormattedValue($this->getValue($data, $repeatCounter));
 
 		$name = $this->getHTMLName($repeatCounter);
@@ -397,7 +378,7 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 
 		if (in_array($this->app->input->get('format', 'html'), array('html', 'partial')))
 		{
-			$opts  = array('alt' => FText::_('PLG_ELEMENT_CALC_LOADING'), 'style' => 'display:none;padding-left:10px;', 'class' => 'loader');
+			$opts  = array('alt' => Text::_('PLG_ELEMENT_CALC_LOADING'), 'style' => 'display:none;padding-left:10px;', 'class' => 'loader');
 			$str[] = FabrikHelperHTML::image('ajax-loader.gif', 'form', @$this->tmpl, $opts);
 		}
 
@@ -417,14 +398,17 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 		$opts = $this->getElementJSOptions($repeatCounter);
 		$params = $this->getParams();
 		$calc = $params->get('calc_calculation');
-		$obs = array();
+		$obs = [];
 		$opts->ajax = $params->get('calc_ajax', 0) == 0 ? false : true;
 
 		if ($opts->ajax)
 		{
-			if ($params->get('calc_ajax_observe_all', '0') === '0')
+			if ($params->get('calc_ajax_observe_all', '0') === '0' ) 
 			{
+				$obs = '';
+				if ( !empty($params->get('calc_ajax_observe')) ) {
 				$obs = preg_replace('#\s#', '', $params->get('calc_ajax_observe'));
+				}
 				$obs = explode(',', $obs);
 
 				if (preg_match_all("/{[^}\s]+}/i", $calc, $matches) !== 0)
@@ -489,7 +473,8 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 		$this->loadMeForAjax();
 		$params        = $this->getParams();
 		$w             = new FabrikWorker;
-		$filter        = JFilterInput::getInstance();
+		$filter        = InputFilter::getInstance();
+		$d             = $filter->clean($_REQUEST, 'array');
 		$formModel     = $this->getFormModel();
 		$repeatCounter = $this->app->input->get('repeatCounter', '0');
 		$formModel->addEncrytedVarsToArray($d);
@@ -512,11 +497,13 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 		$data = $d;
         $calc = $w->parseMessageForRepeats($calc, $data, $this, $repeatCounter);
         $calc = $w->parseMessageForPlaceHolder($calc, $d);
-		$c    = FabrikHelperHTML::isDebug() ? eval($calc) : @eval($calc);
+		FabrikWorker::clearEval();
+		$c 	  = Php::Eval(['code' => $calc, 'vars'=>['data'=>$data, 'd'=>$data, 'repeatCounter'=>$repeatCounter, 'formModel'=>$formModel]]);
+		FabrikWorker::logEval($c, 'Caught exception on ajax eval of calc ' . $this->getElement()->name . ': %s');
 		$c    = preg_replace('#(\/\*.*?\*\/)#', '', $c);
 		$c    = $this->getFormattedValue($c);
 
-		echo $c;
+		echo urldecode($c);
 	}
 
 	/**
@@ -686,7 +673,7 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 		$this->loadMeForAjax();
 
 		/** @var FabrikFEModelList $listModel */
-		$listModel = JModelLegacy::getInstance('List', 'FabrikFEModel');
+		$listModel = BaseDatabaseModel::getInstance('List', 'FabrikFEModel');
 		$listModel->setId($listId);
 		$data = $listModel->getData();
 		$return = new stdClass;
