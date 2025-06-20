@@ -82,7 +82,7 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 		if (!$params->get('calc_on_save_only', true) || $task == 'form.process' || $task == 'process')
 		{
 			// $default = $this->getDefaultValue($data, $repeatCounter);
-			$this->swapValuesForLabels($data);
+			//$this->swapValuesForLabels($data);
 			$this->setStoreDatabaseFormat($data, $repeatCounter);
 			$default = $w->parseMessageForRepeats($params->get('calc_calculation'), $data, $this, $repeatCounter);
 			$default = $w->parseMessageForPlaceHolder($default, $data, true, true);
@@ -220,7 +220,7 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 		 */
 		$key = $this->getFullName(true, false);
 		$rawKey = $key . '_raw';
-		$this->swapValuesForLabels($data);
+		//$this->swapValuesForLabels();
 		$res = $this->_getV($data, $c);
 
 		// Create arrays for calc values as needed
@@ -479,7 +479,7 @@ class PlgFabrik_ElementCalc extends PlgFabrik_Element
 		$repeatCounter = $this->app->input->get('repeatCounter', '0');
 		$formModel->addEncrytedVarsToArray($d);
 		$this->getFormModel()->data = $d;
-		$this->swapValuesForLabels($d);
+		//$this->swapValuesForLabels($d);
 		$calc = $params->get('calc_calculation');
 		$this->setStoreDatabaseFormat($d);
 
